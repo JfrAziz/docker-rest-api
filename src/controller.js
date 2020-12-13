@@ -37,14 +37,31 @@ const getComic = (req, res) => {
 const getVolume = (req, res) => {
   try {
     const { id, volume_no } = req.params;
-    const query = volume_no
-      ? `SELECT * FROM volume WHERE comic_id = ${id} AND volume_no = ${volume_no}`
-      : `SELECT * FROM volume WHERE comic_id = ${id}`;
-    connection.query(query, (error, rows) => {
-      if (error) throw error;
-      if (!rows.length) return NOT_FOUND({ message: "No volumes found" }, res);
-      return OK(rows, res);
-    });
+    if (volume_no) {
+      const query = `SELECT * FROM volume WHERE comic_id = ${id} AND volume_no = ${volume_no}`;
+      connection.query(query, (error, rows) => {
+        if (error) throw error;
+        if (!rows.length)
+          return NOT_FOUND({ message: "No volumes found" }, res);
+        const query_chapter = `SELECT c.title, c.chapter_no, v.published_date FROM chapter c, volume v WHERE v.comic_id = ${id} AND v.volume_no = ${volume_no} AND v.id = c.volume_id`;
+        connection.query(query_chapter, (error, data = []) => {
+          if (error) throw error;
+          const reponse = {
+            volume: rows,
+            chapters: data,
+          };
+          return OK(reponse, res);
+        });
+      });
+    } else {
+      const query = `SELECT * FROM volume WHERE comic_id = ${id}`;
+      connection.query(query, (error, rows) => {
+        if (error) throw error;
+        if (!rows.length)
+          return NOT_FOUND({ message: "No volumes found" }, res);
+        return OK(rows, res);
+      });
+    }
   } catch (error) {
     console.log(`[error] ${error.message}`);
     return BAD_REQUEST({ error: `${error.message}` }, res);
@@ -55,8 +72,8 @@ const getChapter = (req, res) => {
   try {
     const { id, chapter_no } = req.params;
     const query = chapter_no
-      ? `SELECT * FROM chapter WHERE comic_id = ${id} AND chapter_no = ${chapter_no}`
-      : `SELECT * FROM chapter WHERE comic_id = ${id}`;
+      ? `SELECT c.title, c.chapter_no, v.volume_no, v.published_date FROM chapter c, volume v WHERE v.comic_id =  ${id} AND c.volume_id = v.id AND c.chapter_no = ${chapter_no}`
+      : `SELECT c.title, c.chapter_no, v.volume_no, v.published_date FROM chapter c, volume v WHERE v.comic_id =  ${id} AND  c.volume_id = v.id`;
     connection.query(query, (error, rows) => {
       if (error) throw error;
       if (!rows.length) return NOT_FOUND({ message: "No chapter found" }, res);
@@ -76,7 +93,8 @@ const getCharacter = (req, res) => {
       : `SELECT * FROM characters WHERE comic_id = ${id}`;
     connection.query(query, (error, rows) => {
       if (error) throw error;
-      if (!rows.length) return NOT_FOUND({ message: "No character found" }, res);
+      if (!rows.length)
+        return NOT_FOUND({ message: "No character found" }, res);
       return OK(rows, res);
     });
   } catch (error) {

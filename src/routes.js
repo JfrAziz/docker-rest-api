@@ -15,7 +15,7 @@ const routes = (app) => {
   app.route("/comic/:id/characters").get(getCharacter);
   app.route("/comic/:id/characters/:character_id").get(getCharacter);
   app.route("/comic/:id/chapters").get(getChapter);
-  app.route("/comic/:id/chapters/:chapter_no").get(getCharacter);
+  app.route("/comic/:id/chapters/:chapter_no").get(getChapter);
 };
 
 module.exports = routes;
